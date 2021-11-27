@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "github.com/Cristian-Jara/SDLab3.git/proto";
+
+message LeiaRequest{
+    string planet = 1;
+    string city = 2; 
+}
+
+message LeiaReply{
+    string status = 1;
+    int32 quantity = 2;
+    int32 X = 3;
+    int32 Y = 4;
+    int32 Z = 5;
+}
+
+service ChatService {
+    rpc GetNumberRebelds(LeiaRequest) returns (LeiaReply); // Obtener rebeldes
+}
