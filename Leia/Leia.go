@@ -9,6 +9,17 @@ import (
 	pb "github.com/Cristian-Jara/SDLab3.git/proto"
 )
 
+type PlanetInfo struct{
+	planet string
+	city string
+	rquantity int32
+	X int32
+	Y int32
+	Z int32
+	lastserver string
+}
+
+
 const (
 	LocalIP = ""
 	BrokerIP = "10.6.40.227"
@@ -17,9 +28,11 @@ const (
 
 var (
 	Connected = true
+	Exist = false
 	input string
 	planet string
 	city string
+	PlanetsList []PlanetInfo
 )
 
 func main(){
@@ -27,6 +40,7 @@ func main(){
 	if err != nil {
 		log.Fatalf("could not connect: %s",err)
 	}
+
 
 	serviceClient := pb.NewChatServiceClient(conn)
 	for Connected != false{
@@ -45,8 +59,32 @@ func main(){
 				log.Fatalf("Error when calling GetNumberRebelds: %s",err)
 			}
 			if response.Status == "OK"{
-				log.Printf("La cantidad de rebeldes que contiene el planeta y ciudad dado es de: " + strconv.Itoa(int(response.Quantity)))
-				//Agregarse el reloj y el dato, también revisar el dato con la memoria
+				for idx,_ := range PlanetsList{
+					if planet == PlanetsList[idx].planet && city == PlanetsList[idx].city {
+						Exist = true
+						if PlanetsList[idx].X <= response.X && PlanetsList[idx].Y <= response.Y && PlanetsList[idx].Z <= response.Z {
+							PlanetsList[idx].rquantity = response.Quantity
+							PlanetsList[idx].X = response.X
+							PlanetsList[idx].Y = response.Y
+							PlanetsList[idx].Z = response.Z
+							PlanetsList[idx].lastserver = response.Server
+						} 
+						// Se asume que x,y,z vendrán bien en el sentido que 
+						// aumentará alguno de los vectores al menos para la actualización
+						// Tipo 0,0,0 ->1,0,0 -> 1,1,0 -> 1,2,0
+						// Se ignoran posibles errores como 1,0,0 -> 0,1,0 
+						// en el peor de los casos simplemente asume que la nueva opción 
+						// tiene algún problema así que se queda con la opción anterior
+						// ya que no es posible distinguir cual opción es la más nueva 
+						log.Printf("La cantidad de rebeldes que contiene el planeta y ciudad dado es de: " + strconv.Itoa(int(PlanetsList[idx].rquantity)))
+						break
+					} 
+				}
+				if Exist == false {
+					PlanetsList = append(PlanetsList, PlanetInfo{planet, city, response.Quantity, response.X,response.Y,response.Z, response.Server})
+					log.Printf("La cantidad de rebeldes que contiene el planeta y ciudad dado es de: " + strconv.Itoa(int(response.Quantity)))
+				}
+				Exist = false
 			}else {
 				log.Printf("Los valores ingresados no fueron encontrados")
 			}

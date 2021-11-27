@@ -15,6 +15,7 @@ message LeiaReply{
     int32 X = 3;
     int32 Y = 4;
     int32 Z = 5;
+    string server = 6;
 }
 
 service ChatService {
