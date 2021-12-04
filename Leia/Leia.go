@@ -53,7 +53,19 @@ func main(){
 			fmt.Scanln(&planet)
 			log.Printf("Ingresa la ciudad a buscar")
 			fmt.Scanln(&city)
-			message := pb.LeiaRequest{Planet: planet,City: city}
+			x:= int32(-1)
+			y:= int32(-1)
+			z:= int32(-1)
+			// Revisar si la planeta y ciudad existe en los ya revisados y enviar el reloj si es así
+			for idx,_ := range PlanetsList{
+				if planet == PlanetsList[idx].planet && city == PlanetsList[idx].city {
+					x = PlanetsList[idx].X
+					y = PlanetsList[idx].Y
+					z = PlanetsList[idx].Z
+				}
+			}
+			message := pb.LeiaRequest{Planet: planet,City: city,X: x,Y: y,Z: z} 
+			//Si se envia -1,-1,-1 quiere decir que aún no se tienen datos de él
 			response,err := serviceClient.GetNumberRebelds(context.Background(), &message)
 			if err != nil{
 				log.Fatalf("Error when calling GetNumberRebelds: %s",err)

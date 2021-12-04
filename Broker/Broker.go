@@ -13,7 +13,7 @@ import(
 type Server struct {
 	pb.UnimplementedChatServiceServer
 }
-func ChooseServer()(string){
+func ChooseServer()(string){ //Función que elige al azar un servidor
 	var ChoosenServer string
 	rand.Seed(time.Now().UnixNano())
 	id := rand.Intn(3)
@@ -30,8 +30,15 @@ func ChooseServer()(string){
 func (s *Server) GetNumberRebelds(ctx context.Context, message *pb.LeiaRequest) (*pb.LeiaReply,error){
 	log.Printf("Leia se ha conectado para saber el número de rebeldes")
 	log.Printf("Los parámetros son:\nPlaneta: "+ message.Planet + "\nCiudad: "+message.City)
-	ChoosenServer := ChooseServer()
-	log.Printf("Server escogido es: "+ChoosenServer)
+	ChoosenServer := ChooseServer() // Se elije al azar, incluye cuando son iguales [1,1,1]
+	if int(message.X) > int(message.Y) && int(message.X) > int(message.Z) { //[1,0,0]
+		ChoosenServer = ":50058"//"10.6.40.225:50058" // IP1
+	} else if int(message.Y) > int(message.X) && int(message.Y) > int(message.Z) { //[0,1,0]
+		ChoosenServer = ":50058"//"10.6.40.227:50058" // IP2	
+	} else if int(message.Z) > int(message.Y) && int(message.Z) > int(message.X) { //[0,0,1]
+		ChoosenServer = ":50058"//"10.6.40.229:50058" // IP3
+	}
+	log.Printf("Server escogido es: "+ ChoosenServer)
 	//conn, err := grpc.Dial(ChoosenServer, grpc.WithInsecure())
 	//ServerService := pb.NewChatServiceClient(conn)
 	//r, err := ServerService.GetNumberRebelds(context.Background(), &message)
