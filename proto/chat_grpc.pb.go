@@ -19,6 +19,11 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChatServiceClient interface {
 	GetNumberRebelds(ctx context.Context, in *LeiaRequest, opts ...grpc.CallOption) (*LeiaReply, error)
+	GetServer(ctx context.Context, in *BrokerRequest, opts ...grpc.CallOption) (*BrokerReply, error)
+	AddCity(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
+	UpdateName(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
+	UpdateNumber(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
+	DeleteCity(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
 }
 
 type chatServiceClient struct {
@@ -38,11 +43,61 @@ func (c *chatServiceClient) GetNumberRebelds(ctx context.Context, in *LeiaReques
 	return out, nil
 }
 
+func (c *chatServiceClient) GetServer(ctx context.Context, in *BrokerRequest, opts ...grpc.CallOption) (*BrokerReply, error) {
+	out := new(BrokerReply)
+	err := c.cc.Invoke(ctx, "/grpc.ChatService/GetServer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) AddCity(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error) {
+	out := new(ServerReply)
+	err := c.cc.Invoke(ctx, "/grpc.ChatService/AddCity", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) UpdateName(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error) {
+	out := new(ServerReply)
+	err := c.cc.Invoke(ctx, "/grpc.ChatService/UpdateName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) UpdateNumber(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error) {
+	out := new(ServerReply)
+	err := c.cc.Invoke(ctx, "/grpc.ChatService/UpdateNumber", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) DeleteCity(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error) {
+	out := new(ServerReply)
+	err := c.cc.Invoke(ctx, "/grpc.ChatService/DeleteCity", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility
 type ChatServiceServer interface {
 	GetNumberRebelds(context.Context, *LeiaRequest) (*LeiaReply, error)
+	GetServer(context.Context, *BrokerRequest) (*BrokerReply, error)
+	AddCity(context.Context, *ServerRequest) (*ServerReply, error)
+	UpdateName(context.Context, *ServerRequest) (*ServerReply, error)
+	UpdateNumber(context.Context, *ServerRequest) (*ServerReply, error)
+	DeleteCity(context.Context, *ServerRequest) (*ServerReply, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -52,6 +107,21 @@ type UnimplementedChatServiceServer struct {
 
 func (UnimplementedChatServiceServer) GetNumberRebelds(context.Context, *LeiaRequest) (*LeiaReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNumberRebelds not implemented")
+}
+func (UnimplementedChatServiceServer) GetServer(context.Context, *BrokerRequest) (*BrokerReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServer not implemented")
+}
+func (UnimplementedChatServiceServer) AddCity(context.Context, *ServerRequest) (*ServerReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddCity not implemented")
+}
+func (UnimplementedChatServiceServer) UpdateName(context.Context, *ServerRequest) (*ServerReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateName not implemented")
+}
+func (UnimplementedChatServiceServer) UpdateNumber(context.Context, *ServerRequest) (*ServerReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateNumber not implemented")
+}
+func (UnimplementedChatServiceServer) DeleteCity(context.Context, *ServerRequest) (*ServerReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteCity not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 
@@ -84,6 +154,96 @@ func _ChatService_GetNumberRebelds_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_GetServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BrokerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).GetServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ChatService/GetServer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).GetServer(ctx, req.(*BrokerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_AddCity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).AddCity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ChatService/AddCity",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).AddCity(ctx, req.(*ServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_UpdateName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).UpdateName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ChatService/UpdateName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).UpdateName(ctx, req.(*ServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_UpdateNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).UpdateNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ChatService/UpdateNumber",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).UpdateNumber(ctx, req.(*ServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_DeleteCity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).DeleteCity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ChatService/DeleteCity",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).DeleteCity(ctx, req.(*ServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -94,6 +254,26 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNumberRebelds",
 			Handler:    _ChatService_GetNumberRebelds_Handler,
+		},
+		{
+			MethodName: "GetServer",
+			Handler:    _ChatService_GetServer_Handler,
+		},
+		{
+			MethodName: "AddCity",
+			Handler:    _ChatService_AddCity_Handler,
+		},
+		{
+			MethodName: "UpdateName",
+			Handler:    _ChatService_UpdateName_Handler,
+		},
+		{
+			MethodName: "UpdateNumber",
+			Handler:    _ChatService_UpdateNumber_Handler,
+		},
+		{
+			MethodName: "DeleteCity",
+			Handler:    _ChatService_DeleteCity_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

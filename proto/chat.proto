@@ -21,6 +21,38 @@ message LeiaReply{
     string server = 6;
 }
 
+message ServerRequest {
+    string planet = 1;
+    string city = 2;
+    string value = 3; 
+    int32 X = 4;
+    int32 Y = 5;
+    int32 Z = 6;
+}
+
+message ServerReply {
+    string status = 1; 
+    int32 X = 2;
+    int32 Y = 3;
+    int32 Z = 4;
+}
+
+message BrokerRequest{
+    int32 X = 1;
+    int32 Y = 2;
+    int32 Z = 3;
+}
+
+message BrokerReply{
+    string IP = 1;
+}
+
 service ChatService {
     rpc GetNumberRebelds(LeiaRequest) returns (LeiaReply); // Obtener rebeldes
+    rpc GetServer(BrokerRequest) returns (BrokerReply); //Obtener IP
+    rpc AddCity(ServerRequest) returns (ServerReply); //Agregar ciudad
+    rpc UpdateName(ServerRequest) returns (ServerReply); //Update nombre de la ciudad
+    rpc UpdateNumber(ServerRequest) returns (ServerReply); //Update cantidad de rebeldes
+    rpc DeleteCity(ServerRequest) returns (ServerReply); //Eliminar ciudad del registro planetario
+    //rpc EventualConsistency(ServerRequest) returns (ServerReply); //Para propagar entre servers
 }
