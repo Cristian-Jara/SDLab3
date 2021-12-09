@@ -47,6 +47,28 @@ message BrokerReply{
     string IP = 1;
 }
 
+message Data{
+    string city = 1;
+    string value = 2;
+}
+
+message PlanetsData{
+    string planet = 1;
+    int32 X = 2;
+    int32 Y = 3;
+    int32 Z = 4;
+    repeated Data data= 5;
+}
+
+message PropagationRequest{
+    repeated PlanetsData planetsdata = 1;
+}
+
+message PropagationReply{
+    string status = 1; 
+    repeated PlanetsData planetsdata = 2;
+}
+
 service ChatService {
     rpc GetNumberRebelds(LeiaRequest) returns (LeiaReply); // Obtener rebeldes
     rpc GetServer(BrokerRequest) returns (BrokerReply); //Obtener IP
@@ -54,5 +76,5 @@ service ChatService {
     rpc UpdateName(ServerRequest) returns (ServerReply); //Update nombre de la ciudad
     rpc UpdateNumber(ServerRequest) returns (ServerReply); //Update cantidad de rebeldes
     rpc DeleteCity(ServerRequest) returns (ServerReply); //Eliminar ciudad del registro planetario
-    //rpc EventualConsistency(ServerRequest) returns (ServerReply); //Para propagar entre servers
+    rpc EventualConsistency(PropagationRequest) returns (PropagationReply); //Para propagar entre servers
 }

@@ -24,6 +24,7 @@ type ChatServiceClient interface {
 	UpdateName(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
 	UpdateNumber(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
 	DeleteCity(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
+	EventualConsistency(ctx context.Context, in *PropagationRequest, opts ...grpc.CallOption) (*PropagationReply, error)
 }
 
 type chatServiceClient struct {
@@ -88,6 +89,15 @@ func (c *chatServiceClient) DeleteCity(ctx context.Context, in *ServerRequest, o
 	return out, nil
 }
 
+func (c *chatServiceClient) EventualConsistency(ctx context.Context, in *PropagationRequest, opts ...grpc.CallOption) (*PropagationReply, error) {
+	out := new(PropagationReply)
+	err := c.cc.Invoke(ctx, "/grpc.ChatService/EventualConsistency", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility
@@ -98,6 +108,7 @@ type ChatServiceServer interface {
 	UpdateName(context.Context, *ServerRequest) (*ServerReply, error)
 	UpdateNumber(context.Context, *ServerRequest) (*ServerReply, error)
 	DeleteCity(context.Context, *ServerRequest) (*ServerReply, error)
+	EventualConsistency(context.Context, *PropagationRequest) (*PropagationReply, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -122,6 +133,9 @@ func (UnimplementedChatServiceServer) UpdateNumber(context.Context, *ServerReque
 }
 func (UnimplementedChatServiceServer) DeleteCity(context.Context, *ServerRequest) (*ServerReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCity not implemented")
+}
+func (UnimplementedChatServiceServer) EventualConsistency(context.Context, *PropagationRequest) (*PropagationReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EventualConsistency not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 
@@ -244,6 +258,24 @@ func _ChatService_DeleteCity_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_EventualConsistency_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PropagationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).EventualConsistency(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ChatService/EventualConsistency",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).EventualConsistency(ctx, req.(*PropagationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -274,6 +306,10 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCity",
 			Handler:    _ChatService_DeleteCity_Handler,
+		},
+		{
+			MethodName: "EventualConsistency",
+			Handler:    _ChatService_EventualConsistency_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

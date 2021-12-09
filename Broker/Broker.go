@@ -41,14 +41,13 @@ func (s *Server) GetNumberRebelds(ctx context.Context, message *pb.LeiaRequest) 
 	ChoosenServer := ChooseServer(int(message.X),int(message.Y),int(message.Z)) 
 	log.Printf("Server escogido es: "+ ChoosenServer)
 	// Para cuando este funcional el servidor
-	//conn, err := grpc.Dial(ChoosenServer, grpc.WithInsecure())
-	//ServerService := pb.NewChatServiceClient(conn)
-	//r, err := ServerService.GetNumberRebelds(context.Background(), &message)
-	//if err != nil {
-	//	log.Fatalf("could not greet: %v", err)
-	//}
-	//return &pb.LeiaReply{Status:response.Status, Quantity: response.Quantity, X: response.X, Y: response.Y, Z: response.Z, Server: ChoosenServer},nil
-	return &pb.LeiaReply{Status:"OK", Quantity: 10, X: 1, Y: 2, Z: 0, Server: ChoosenServer},nil
+	conn, err := grpc.Dial(ChoosenServer, grpc.WithInsecure())
+	ServerService := pb.NewChatServiceClient(conn)
+	response, err := ServerService.GetNumberRebelds(context.Background(), message)
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	return &pb.LeiaReply{Status:response.Status, Quantity: response.Quantity, X: response.X, Y: response.Y, Z: response.Z, Server: ChoosenServer},nil
 }
 
 func (s *Server) GetServer(ctx context.Context, message *pb.BrokerRequest) (*pb.BrokerReply,error) {

@@ -1,13 +1,14 @@
 package main
 
 import (
-	//"context"
+	"context"
 	"fmt"
-	//"io/ioutil"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
-	//"strconv"
+	"strings"
+	"strconv"
 	"google.golang.org/grpc"
 	pb "github.com/Cristian-Jara/SDLab3.git/proto"
 	
@@ -17,65 +18,76 @@ type server struct {
 	pb.UnimplementedChatServiceServer
 }
 
-type Data struct{
-	city string
-	value string
-}
 
 type PlanetData struct{
 	planet string
-	data []Data
-	RegisterPath string
-	LogPath string
 	X int32
 	Y int32
 	Z int32
 }
 
-/*func AppendData(planet string, city string, value string){
-	data = Data{city,value}
-	for _,info := range PlanetData { 
-		if info.planet == planet { //Se podría revisar si existe o no, o se hace antes
-			info.data = append(info.data, data)
+func crearRegistro(path string, planet string) (error) {
+	//Verifica que el archivo existe
+	_, err := os.Stat(path)
+	//Crea el archivo si no existe
+	if os.IsNotExist(err) {
+		var file, err = os.Create(path)
+		if err != nil {
+			return err
 		}
-	}
-}
-
-func UpdtName(planet string, city string, value string){
-	for idx,_ := range PlanetData { 
-		if PlanetData[idx].planet == planet { //Se podría revisar si existe o no, o se hace antes
-			for i,_ := PlanetData[idx].data {
-				if PlanetData[idx].data[i].city == city {
-					PlanetData[idx].data[i].city = value
-					break
-				}
-			}
-			break
-		}
-	}
-}
-
-func UpdtNumber(planet string, city string, value string){
-	for idx,_ := range PlanetData { 
-		if PlanetData[idx].planet == planet { //Se podría revisar si existe o no, o se hace antes
-			for i,_ := PlanetData[idx].data {
-				if PlanetData[idx].data[i].city == city {
-					PlanetData[idx].data[i].value = value
-					break
-				}
-			}
-			break
-		}
-	}
-}
-
-func ReadData(player string)([]string){
-	for _,info := range PlayersData {
-		if info.player == player {
-			return info.paths
-		}
+		defer file.Close()
+		PlanetsData = append(PlanetsData, PlanetData{planet, 0,0,0})
 	}
 	return nil
+}
+
+func crearLog(path string) (error) {
+	//Verifica que el archivo existe
+	_, err := os.Stat(path)
+	//Crea el archivo si no existe
+	if os.IsNotExist(err) {
+		var file, err = os.Create(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+	}
+	return nil
+}
+
+func escribirArchivo(path string, message string) (error){ //Escribe al final del archivo
+	b, errtxt := ioutil.ReadFile(path)
+
+	if errtxt != nil {
+		log.Fatal(errtxt)
+		return errtxt
+	}
+	b = append(b, []byte(message)...)
+	errtxt = ioutil.WriteFile(path, b, 0644)
+	if errtxt != nil {
+		log.Fatal(errtxt)
+		return errtxt
+	}
+	return nil
+}
+
+func eliminarArchivo(path string){
+	err := os.Remove(path)
+	if err != nil {
+		fmt.Printf("Error eliminando archivo: %v\n", err)
+	}
+}
+
+func SumarAlReloj(planet string)(int32,int32,int32){ //Uno para cada servidor en el campo correspondiente
+	for idx,_ := range PlanetsData { 
+		if PlanetsData[idx].planet == planet {
+			PlanetsData[idx].X += 1     //S1
+			//PlanetsData[idx].Y += 1     //S2
+			//PlanetsData[idx].Z += 1     //S3
+			return PlanetsData[idx].X,PlanetsData[idx].Y,PlanetsData[idx].Z
+		}
+	}
+	return -1,-1,-1
 }
 
 func (s *server) AddCity(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
@@ -83,56 +95,181 @@ func (s *server) AddCity(ctx context.Context, in *pb.ServerRequest) (*pb.ServerR
 	// Se debe crear el archivo del planeta si no existe y lo mismo con el log
 	// Si existe hay que revisar si la ciudad existe, para ello se puede usar la estructura
 	// Agregar cosa a la estructura también, manejar reloj de vector dependiendo del servidor
-	var path = "Servers/ServersData/Logs/"+ in.Planet +".txt"
-	var path2 = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
-
-	//AppendData(in.Player,path) // Agregar la info a PlanetData
-	//Verifica que el archivo existe
-	var _, err = os.Stat(path)
-	//Crea el archivo si no existe
-	if os.IsNotExist(err) {
-		var file, err = os.Create(path)
-		if err != nil {
-			return &pb.ServerReply{ Status: "Error al crear el archivo" },err
-		}
-		defer file.Close()
+	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
+	var path2 = "Servers/ServersData/Logs/"+ in.Planet +".txt"
+	
+	err := crearRegistro(path,in.Planet) 
+	err2 := crearLog(path2)
+	if err != nil {
+		return &pb.ServerReply{ Status: "Error al crear el archivo del registro planetario" },err
+	}
+	if err2 != nil {
+		return &pb.ServerReply{ Status: "Error al crear el archivo log" },err2
 	}
 
-	// añadir al texto
-	b, errtxt := ioutil.ReadFile(path)
+	// Para planetregister
+	message := in.Planet +" "+ in.City + " " + in.Value +"\n" // Agregar mensaje
+	err = escribirArchivo(path, message)
+	x, y, z := SumarAlReloj(in.Planet)
+	//Agregar 1 al reloj dependiendo del servidor
+	// Para log
+	message = "AddCity " + in.Planet +" "+ in.City + " " + in.Value +"\n" // Agregar mensaje
+	err2 = escribirArchivo(path2, message)
 
-	if errtxt != nil {
-		log.Fatal(errtxt)
+	if err != nil {
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo del registro planetario" },err
 	}
-	message := "\n"
-	b = append(b, []byte(message)...)
-	errtxt = ioutil.WriteFile(path, b, 0644)
-	if errtxt != nil {
-		log.Fatal(errtxt)
-		return &pb.ServerReply{ Status: "Error al escribir en el archivo" },err
+	if err2 != nil {
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo log" },err2
 	}
-	return &pb.ServerReply{ Status: "OK" },nil
+
+	return &pb.ServerReply{ Status: "OK" , X: x, Y: y, Z: z},nil
 }
 
-func (s *server) GetPlayerInfo(ctx context.Context, in *pb.PlayerInfo) (*pb.PlayerInfo, error) {
-	paths := ReadData(in.Message)
-	if paths == nil{
-		return &pb.PlayerInfo{Message: ""}, nil
-	}
-	message := ""
-	for _, path := range paths {
-		//Leer el archivo y chantar todo
-		b, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Fatal(err)
+func (s *server) UpdateName(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
+	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
+	var path2 = "Servers/ServersData/Logs/"+ in.Planet +".txt" 
+	//Se asume que en este punto existen
+	input, err := ioutil.ReadFile(path)
+	if err != nil{
+		log.Fatal(err)
+	}	
+	lines := strings.Split(string(input), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, in.City) {
+			splitLine := strings.Split(string(line), " ")
+			rebeldes := splitLine[2] //Se saca el número
+			lines[i] = in.Planet + " " + in.Value + " " + rebeldes
 		}
-		message += string(b)
 	}
-	return &pb.PlayerInfo{Message: message}, nil
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(path, []byte(output), 0644)
+	if err != nil {
+		log.Fatal(err)
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo de registro" },err
+	}
+	x, y, z := SumarAlReloj(in.Planet)
+	message := "UpdateName " + in.Planet +" "+ in.City + " " + in.Value +"\n" // Agregar mensaje
+	err2 := escribirArchivo(path2, message)
+	if err2 != nil {
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo log" },err2
+	}
+	return &pb.ServerReply{ Status: "OK", X: x, Y: y, Z: z },nil
+}
+
+func (s *server) UpdateNumber(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
+	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
+	var path2 = "Servers/ServersData/Logs/"+ in.Planet +".txt" 
+	//Se asume que en este punto existen
+	input, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines { 
+		if strings.Contains(line, in.City) {
+			lines[i] = in.Planet + " " + in.City + " " + in.Value
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(path, []byte(output), 0644)
+	if err != nil {
+		log.Fatal(err)
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo de registro" },err
+	}
+
+	x, y, z := SumarAlReloj(in.Planet)
+	message := "UpdateNumber " + in.Planet +" "+ in.City + " " + in.Value +"\n" // Agregar mensaje
+	err2 := escribirArchivo(path2, message)
+	if err2 != nil {
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo log" },err2
+	}
+	return &pb.ServerReply{ Status: "OK", X: x, Y: y, Z: z },nil
+}
+
+func (s *server) DeleteCity(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
+	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
+	var path2 = "Servers/ServersData/Logs/"+ in.Planet +".txt" 
+	//Se asume que en este punto existen
+	input, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+	var newlines []string
+	for i, line := range lines { 
+		if !strings.Contains(line, in.City) {
+			newlines = append(newlines, lines[i])
+		}
+	}
+	output := strings.Join(newlines, "\n")
+	err = ioutil.WriteFile(path, []byte(output), 0644)
+	if err != nil {
+		log.Fatal(err)
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo de registro" },err
+	}
+
+	x, y, z := SumarAlReloj(in.Planet)
+	message := "DeleteCity " + in.Planet +" "+ in.City +"\n" // Agregar mensaje
+	err2 := escribirArchivo(path2, message)
+	if err2 != nil {
+		return &pb.ServerReply{ Status: "Error al escribir en el archivo log" },err2
+	}
+
+	return &pb.ServerReply{ Status: "OK", X: x, Y: y, Z: z },nil
+}
+
+func (s *server) GetNumberRebelds(ctx context.Context, in *pb.LeiaRequest)(*pb.LeiaReply,error){
+	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
+	var x,y,z = int32(-1), int32(-1), int32(-1)
+	for idx,_ := range PlanetsData { 
+		if PlanetsData[idx].planet == in.Planet {
+			x,y,z = PlanetsData[idx].X,PlanetsData[idx].Y,PlanetsData[idx].Z
+		}
+	} // Buscar si existe
+	if x == int32(-1){
+		return &pb.LeiaReply{Status: "No se encontró el planeta y ciudad dados"}, nil
+	}
+	input, err := ioutil.ReadFile(path)
+	if err != nil{
+		log.Fatal(err)
+		return &pb.LeiaReply{Status: "Error al leer el archivo"}, nil
+	}
+	lines := strings.Split(string(input), "\n")
+	var quantity int32
+	for _, line := range lines {
+		if strings.Contains(line, in.City) {
+			splitLine := strings.Split(string(line), " ")
+			i, err := strconv.Atoi(splitLine[2])
+			if err != nil{
+				log.Fatal(err)
+				return &pb.LeiaReply{Status: "Error obtener valor númerico de rebeldes"}, nil
+			}
+			quantity = int32(i) //Se saca el número  
+		}
+	}
+	return &pb.LeiaReply{Status:"OK", Quantity: quantity, X: x, Y: y, Z: z},nil
+}
+
+/*func propagacion(){
+	//Aquí iría el código de propagación, si tan solo tuviera uno
+	//Nueva func para propagar info
+	//Función que revise la data y con alguna elección arbitraria 
+	// decida con que data quedarse
 }*/
+
 var PlanetsData []PlanetData
 
 func main() {
+	/*go func() {
+		for{
+			time.Sleep(120 * time.Second)
+			propagacion()
+		}
+	}()*/
 	var path = "Servers/ServersData"
 	var _, err = os.Stat(path)
 	if !os.IsNotExist(err){
