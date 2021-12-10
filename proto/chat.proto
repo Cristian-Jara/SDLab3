@@ -57,11 +57,12 @@ message PlanetsData{
     int32 X = 2;
     int32 Y = 3;
     int32 Z = 4;
-    repeated Data data= 5;
+    repeated Data data = 5;
+    string logs = 6;
 }
 
-message PropagationRequest{
-    repeated PlanetsData planetsdata = 1;
+message Propagation{
+    string status = 1;
 }
 
 message PropagationReply{
@@ -76,5 +77,6 @@ service ChatService {
     rpc UpdateName(ServerRequest) returns (ServerReply); //Update nombre de la ciudad
     rpc UpdateNumber(ServerRequest) returns (ServerReply); //Update cantidad de rebeldes
     rpc DeleteCity(ServerRequest) returns (ServerReply); //Eliminar ciudad del registro planetario
-    rpc EventualConsistency(PropagationRequest) returns (PropagationReply); //Para propagar entre servers
+    rpc PropagationRequest(Propagation) returns (PropagationReply); // Solicita la info para realizar merge
+    rpc EventualConsistency(PropagationReply) returns (Propagation); //Para propagar entre servers
 }

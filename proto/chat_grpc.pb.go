@@ -24,7 +24,8 @@ type ChatServiceClient interface {
 	UpdateName(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
 	UpdateNumber(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
 	DeleteCity(ctx context.Context, in *ServerRequest, opts ...grpc.CallOption) (*ServerReply, error)
-	EventualConsistency(ctx context.Context, in *PropagationRequest, opts ...grpc.CallOption) (*PropagationReply, error)
+	PropagationRequest(ctx context.Context, in *Propagation, opts ...grpc.CallOption) (*PropagationReply, error)
+	EventualConsistency(ctx context.Context, in *PropagationReply, opts ...grpc.CallOption) (*Propagation, error)
 }
 
 type chatServiceClient struct {
@@ -89,8 +90,17 @@ func (c *chatServiceClient) DeleteCity(ctx context.Context, in *ServerRequest, o
 	return out, nil
 }
 
-func (c *chatServiceClient) EventualConsistency(ctx context.Context, in *PropagationRequest, opts ...grpc.CallOption) (*PropagationReply, error) {
+func (c *chatServiceClient) PropagationRequest(ctx context.Context, in *Propagation, opts ...grpc.CallOption) (*PropagationReply, error) {
 	out := new(PropagationReply)
+	err := c.cc.Invoke(ctx, "/grpc.ChatService/PropagationRequest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) EventualConsistency(ctx context.Context, in *PropagationReply, opts ...grpc.CallOption) (*Propagation, error) {
+	out := new(Propagation)
 	err := c.cc.Invoke(ctx, "/grpc.ChatService/EventualConsistency", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -108,7 +118,8 @@ type ChatServiceServer interface {
 	UpdateName(context.Context, *ServerRequest) (*ServerReply, error)
 	UpdateNumber(context.Context, *ServerRequest) (*ServerReply, error)
 	DeleteCity(context.Context, *ServerRequest) (*ServerReply, error)
-	EventualConsistency(context.Context, *PropagationRequest) (*PropagationReply, error)
+	PropagationRequest(context.Context, *Propagation) (*PropagationReply, error)
+	EventualConsistency(context.Context, *PropagationReply) (*Propagation, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -134,7 +145,10 @@ func (UnimplementedChatServiceServer) UpdateNumber(context.Context, *ServerReque
 func (UnimplementedChatServiceServer) DeleteCity(context.Context, *ServerRequest) (*ServerReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCity not implemented")
 }
-func (UnimplementedChatServiceServer) EventualConsistency(context.Context, *PropagationRequest) (*PropagationReply, error) {
+func (UnimplementedChatServiceServer) PropagationRequest(context.Context, *Propagation) (*PropagationReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PropagationRequest not implemented")
+}
+func (UnimplementedChatServiceServer) EventualConsistency(context.Context, *PropagationReply) (*Propagation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EventualConsistency not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
@@ -258,8 +272,26 @@ func _ChatService_DeleteCity_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_PropagationRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Propagation)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).PropagationRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ChatService/PropagationRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).PropagationRequest(ctx, req.(*Propagation))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ChatService_EventualConsistency_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PropagationRequest)
+	in := new(PropagationReply)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -271,7 +303,7 @@ func _ChatService_EventualConsistency_Handler(srv interface{}, ctx context.Conte
 		FullMethod: "/grpc.ChatService/EventualConsistency",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChatServiceServer).EventualConsistency(ctx, req.(*PropagationRequest))
+		return srv.(ChatServiceServer).EventualConsistency(ctx, req.(*PropagationReply))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -306,6 +338,10 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCity",
 			Handler:    _ChatService_DeleteCity_Handler,
+		},
+		{
+			MethodName: "PropagationRequest",
+			Handler:    _ChatService_PropagationRequest_Handler,
 		},
 		{
 			MethodName: "EventualConsistency",

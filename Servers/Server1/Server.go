@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"time"
 	"google.golang.org/grpc"
 	pb "github.com/Cristian-Jara/SDLab3.git/proto"
 	
@@ -261,15 +262,102 @@ func (s *server) GetNumberRebelds(ctx context.Context, in *pb.LeiaRequest)(*pb.L
 	// decida con que data quedarse
 }*/
 
+func EmptyLogs(){
+	for _, value := range PlanetsData{
+		path := "Servers/ServersData/Logs/"+ value.planet +".txt"
+		err := ioutil.WriteFile(path, []byte(""), 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func InfoToMessage() (*pb.PropagationReply){
+	message := &pb.PropagationReply{Status: "OK"}
+	for _, value := range PlanetsData{
+		//Se revisa toda la data de los planetas
+		path := "Servers/ServersData/PlanetRegisters/"+ value.planet +".txt"
+		path2 := "Servers/ServersData/Logs/"+ value.planet +".txt"
+		input, err := ioutil.ReadFile(path) //Archivo del planeta
+		if err != nil {
+			log.Fatalln(err)
+		}
+		input2, err := ioutil.ReadFile(path2) //Logs
+		if err != nil {
+			log.Fatalln(err)
+		}
+		planetData := &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Logs: string(input2)}
+		lines := strings.Split(string(input), "\n")
+		for _, line := range lines {
+			splitLine := strings.Split(string(line), " ")
+			data := &pb.Data{City: splitLine[1], Value: splitLine[2]}
+			planetData.Data = append(planetData.Data, data) //Agrega toda la data del planeta
+		}
+		message.Planetsdata = append(message.Planetsdata, planetData) 
+		//Agrega todos los datos de todos los planetas
+
+	}
+	return message
+}
+
 var PlanetsData []PlanetData
 
 func main() {
-	/*go func() {
-		for{
-			time.Sleep(120 * time.Second)
-			propagacion()
+	go func() {
+		Server2 := ":50058" // IP2
+		Server3 := ":50058" // IP3
+		conn, err := grpc.Dial(Server2, grpc.WithInsecure())
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
 		}
-	}()*/
+		conn2, err := grpc.Dial(Server3, grpc.WithInsecure())
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		Server2Service := pb.NewChatServiceClient(conn)
+		Server3Service := pb.NewChatServiceClient(conn2)
+		for{
+			time.Sleep(120 * time.Second) //Se esperean dos minutos
+			
+			//message := pb.PropagationRequest{Planetsdata: []*pb.PlanetsData{
+			//	{Planet: "planeta1", X: 1, Y: 1, Z: 2, Data: []*pb.Data{{City: "ciudad1", Value: "1"},{City: "ciudad2", Value: "12"}}},
+			//	{Planet: "planeta2", X: 1, Y: 1, Z: 2, Data: []*pb.Data{{City: "ciudad1.1", Value: "2"},{City: "ciudad2.1", Value: "21"}}}}}
+			//Forma en la que funcionan los mensajes para pasar toda la información
+			// Posible recomendación para mi yo del futuro o pa cualquier otro miembro
+			// Ir armando de a poco, Buscar toda la data de un planeta y rellenar su "data" 
+			// con eso crear un tipo PlanetsData que se le vayan añadiendo más, cosa que al final quede:
+			//message := pb.PropagationRequest{Planetsdata: AllData}
+			// Si no es posible cambiar a enviar 1 por 1 y usar mensajes de Recibido, y terminado
+			message := pb.Propagation{Status: "Oe toca propagar"}
+			response,err := Server2Service.PropagationRequest(context.Background(), &message)
+			for err != nil{
+				log.Fatalf("Error when calling PropagationRequest of server 2: %s",err)
+				response,err = Server2Service.PropagationRequest(context.Background(), &message)
+			}
+			response2,err := Server3Service.PropagationRequest(context.Background(), &message)
+			for err != nil{
+				log.Fatalf("Error when calling PropagationRequest of server 3: %s",err)
+				response2,err = Server3Service.PropagationRequest(context.Background(), &message)
+			}
+			if response != nil && response2 != nil { //los dos response es toda la info
+				fmt.Println("A")
+			}
+			/*********************************FALTA AQUÍ EL MERGE Y GUARDAR NUEVA INFO *********/
+			//Merge(response, response2) -> reemplazar la info interna también y borrar logs
+			EmptyLogs() //Vacía los logs
+			message2 := InfoToMessage() //Pasa la información guardada a mensaje
+			response3,err := Server2Service.EventualConsistency(context.Background(), message2)
+			for err != nil && response3.Status != "OK"{
+				log.Fatalf("Error when calling EventualConsistency of server 2: %s",err)
+				response3,err = Server2Service.EventualConsistency(context.Background(), message2)
+			}
+			response4,err := Server3Service.EventualConsistency(context.Background(), message2)
+			for err != nil && response4.Status != "OK"{
+				log.Fatalf("Error when calling EventualConsistency of server 3: %s",err)
+				response4,err = Server3Service.EventualConsistency(context.Background(), message2)
+			}
+		}
+	}()
 	var path = "Servers/ServersData"
 	var _, err = os.Stat(path)
 	if !os.IsNotExist(err){

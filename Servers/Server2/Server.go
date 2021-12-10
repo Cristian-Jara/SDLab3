@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 	"strconv"
 	"google.golang.org/grpc"
 	pb "github.com/Cristian-Jara/SDLab3.git/proto"
@@ -255,12 +254,60 @@ func (s *server) GetNumberRebelds(ctx context.Context, in *pb.LeiaRequest)(*pb.L
 	return &pb.LeiaReply{Status:"OK", Quantity: quantity, X: x, Y: y, Z: z},nil
 }
 
+func (s *server) PropagationRequest(ctx context.Context, in *pb.Propagation)(*pb.PropagationReply,error){
+	message := InfoToMessage()
+	return message, nil
+}
 
+func (s *server) EventualConsistency(ctx context.Context, in *pb.PropagationReply)(*pb.Propagation,error){
+	// Vaciar los logs de cada planeta
+	EmptyLogs()
+	// Cambiar todos los datos por lo nuevo
+	return &pb.Propagation{Status: "OK"}, nil
+}
+
+func EmptyLogs(){
+	for _, value := range PlanetsData{
+		path := "Servers/ServersData/Logs/"+ value.planet +".txt"
+		err := ioutil.WriteFile(path, []byte(""), 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func InfoToMessage() (*pb.PropagationReply){
+	message := &pb.PropagationReply{Status: "OK"}
+	for _, value := range PlanetsData{
+		//Se revisa toda la data de los planetas
+		path := "Servers/ServersData/PlanetRegisters/"+ value.planet +".txt"
+		path2 := "Servers/ServersData/Logs/"+ value.planet +".txt"
+		input, err := ioutil.ReadFile(path) //Archivo del planeta
+		if err != nil {
+			log.Fatalln(err)
+		}
+		input2, err := ioutil.ReadFile(path2) //Logs
+		if err != nil {
+			log.Fatalln(err)
+		}
+		planetData := &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Logs: string(input2)}
+		lines := strings.Split(string(input), "\n")
+		for _, line := range lines {
+			splitLine := strings.Split(string(line), " ")
+			data := &pb.Data{City: splitLine[1], Value: splitLine[2]}
+			planetData.Data = append(planetData.Data, data) //Agrega toda la data del planeta
+		}
+		message.Planetsdata = append(message.Planetsdata, planetData) 
+		//Agrega todos los datos de todos los planetas
+
+	}
+	return message
+}
 
 var PlanetsData []PlanetData
 
 func main() {
-	go func() {
+	/*go func() {
 		ChoosenServer := ":50058"
 		conn, err := grpc.Dial(ChoosenServer, grpc.WithInsecure())
 		if err != nil {
@@ -280,7 +327,7 @@ func main() {
 			// Si no es posible cambiar a enviar 1 por 1 y usar mensajes de Recibido, y terminado
 			ServerService.EventualConsistency(context.Background(), &message)
 		}
-	}()
+	}()*/
 	var path = "Servers/ServersData"
 	var _, err = os.Stat(path)
 	if !os.IsNotExist(err){
