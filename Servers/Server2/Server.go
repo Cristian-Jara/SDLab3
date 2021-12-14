@@ -324,9 +324,11 @@ func InfoToMessage() (*pb.PropagationReply){
 		planetData := &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Logs: string(input2)}
 		lines := strings.Split(string(input), "\n")
 		for _, line := range lines {
-			splitLine := strings.Split(string(line), " ")
-			data := &pb.Data{City: splitLine[1], Value: splitLine[2]}
-			planetData.Data = append(planetData.Data, data) //Agrega toda la data del planeta
+			if line != "" {
+				splitLine := strings.Split(string(line), " ")
+				data := &pb.Data{City: splitLine[1], Value: splitLine[2]}
+				planetData.Data = append(planetData.Data, data) //Agrega toda la data del planeta
+			}
 		}
 		message.Planetsdata = append(message.Planetsdata, planetData) 
 		//Agrega todos los datos de todos los planetas
@@ -334,6 +336,7 @@ func InfoToMessage() (*pb.PropagationReply){
 	}
 	return message
 }
+
 
 var PlanetsData []PlanetData //Arreglo que contiene los relojes de cada planeta
 
