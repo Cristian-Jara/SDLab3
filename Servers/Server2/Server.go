@@ -308,7 +308,7 @@ func EmptyAll(){
 }
 
 func InfoToMessage() (*pb.PropagationReply){
-	message := &pb.PropagationReply{Status: "OK"}
+	message := &pb.PropagationReply{Status: "OK", Planetsdata: []*pb.PlanetsData{}}
 	for _, value := range PlanetsData{
 		//Se revisa toda la data de los planetas
 		path := "Servers/ServersData/PlanetRegisters/"+ value.planet +".txt"
@@ -321,7 +321,7 @@ func InfoToMessage() (*pb.PropagationReply){
 		if err != nil {
 			log.Fatalln(err)
 		}
-		planetData := &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Logs: string(input2)}
+		planetData := &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Data: []*pb.Data{}, Logs: string(input2)}
 		lines := strings.Split(string(input), "\n")
 		for _, line := range lines {
 			if line != "" {
@@ -336,6 +336,7 @@ func InfoToMessage() (*pb.PropagationReply){
 	}
 	return message
 }
+
 
 
 var PlanetsData []PlanetData //Arreglo que contiene los relojes de cada planeta
