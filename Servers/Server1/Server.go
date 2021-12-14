@@ -293,12 +293,9 @@ func InfoToMessage() (*pb.PropagationReply){
 		}
 		planetData := &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Data: []*pb.Data{}, Logs: string(input2)}
 		lines := strings.Split(string(input), "\n")
-		fmt.Printf("%q\n",lines)
 		for _, line := range lines {
 			if line != "" {
-				fmt.Printf("%q\n",line)
 				splitLine := strings.Split(string(line), " ")
-				fmt.Printf("%q\n",splitLine)
 				data := &pb.Data{City: splitLine[1], Value: splitLine[2]}
 				planetData.Data = append(planetData.Data, data) //Agrega toda la data del planeta
 			}
@@ -353,7 +350,7 @@ func Fill(data []*pb.PlanetsData){
 		}
 		// se escriben los datos de ciudades
 		for _, c := range p.Data{
-			text := p.Planet +  c.City + c.Value + "\n"
+			text := p.Planet + " " + c.City + " " +c.Value + "\n"
 			escribirArchivo(path,text)
 		}
 	}

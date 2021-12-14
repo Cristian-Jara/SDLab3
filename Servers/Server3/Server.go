@@ -278,7 +278,7 @@ func Fill(data []*pb.PlanetsData){
 		}
 		// se escriben los datos de ciudades
 		for _, c := range p.Data{
-			text := p.Planet +  c.City + c.Value + "\n"
+			text := p.Planet + " " + c.City + " " +c.Value + "\n"
 			escribirArchivo(path,text)
 		}
 	}
