@@ -201,9 +201,9 @@ func (s *server) DeleteCity(ctx context.Context, in *pb.ServerRequest) (*pb.Serv
 
 	lines := strings.Split(string(input), "\n")
 	var newlines []string
-	for i, line := range lines { 
+	for _, line := range lines { 
 		if !strings.Contains(line, in.City) {
-			newlines = append(newlines, lines[i])
+			newlines = append(newlines, string(line))
 		}
 	}
 	output := strings.Join(newlines, "\n")
