@@ -262,11 +262,16 @@ func (s *server) GetNumberRebelds(ctx context.Context, in *pb.LeiaRequest)(*pb.L
 	// decida con que data quedarse
 }*/
 
-func EmptyLogs(){
+func EmptyAll(){
 	for _, value := range PlanetsData{
 		path := "Servers/ServersData/Logs/"+ value.planet +".txt"
 		err := ioutil.WriteFile(path, []byte(""), 0644)
 		if err != nil {
+			log.Fatal(err)
+		}
+		path2 := "Servers/ServersData/PlanetRegisters/"+ value.planet +".txt"
+		err2 := ioutil.WriteFile(path2, []byte(""), 0644)
+		if err2 != nil {
 			log.Fatal(err)
 		}
 	}
@@ -300,12 +305,284 @@ func InfoToMessage() (*pb.PropagationReply){
 	return message
 }
 
+
+type DeletedCities struct{
+	planet string
+	cities []string
+}
+
+type CityValue struct{
+	city string
+	value string
+}
+
+type NameModifiedCities struct{
+	planet string
+	cities []CityValue
+}
+
+func Max(x,y int32) (int32){
+	if x < y {
+		return y
+	}
+	return x
+}
+
+func Merge(Sv2Data, Sv3Data []*pb.PlanetsData){
+	Sv1Data := InfoToMessage().Planetsdata // Formatea la info para que este con el mismo formato que el los demás servidores
+	//Asumir Sv1Data está bien y desde las acciones de los demás aplicar modificaciones
+	flag := false
+	var ANMC []NameModifiedCities //Conflictos de nombre
+	var ADC []DeletedCities //Conflictos de eliminación
+	for _, value := range Sv2Data {
+		flag = false
+		for idx, value2 := range Sv1Data {
+			if value.Planet == value2.Planet {
+				flag = true
+				if value.X != value2.X || value.Y != value2.Y || value.Z != value2.Z {
+					//Se debe revisar logs para posibles conflictos
+					lines := strings.Split(string(value.Logs), "\n")
+					lines2 := strings.Split(string(value2.Logs), "\n")
+					var DeletedCitiesArray []string 
+					var NameModifiedCitiesArray []CityValue 
+					for _, line := range lines {
+						if strings.Contains(line, "DeleteCity") {
+							splitLine := strings.Split(string(line), " ")
+							DeletedCitiesArray = append(DeletedCitiesArray, splitLine[2])
+						}else if strings.Contains(line, "UpdateName") {
+							splitLine := strings.Split(string(line), " ")
+							var aux CityValue
+							aux.city = splitLine[2]
+							aux.value = splitLine[3]
+							NameModifiedCitiesArray = append(NameModifiedCitiesArray, aux)
+						}
+					}
+					for _, line := range lines2 {
+						if strings.Contains(line, "DeleteCity") {
+							splitLine := strings.Split(string(line), " ")
+							DeletedCitiesArray = append(DeletedCitiesArray, splitLine[2])
+						}else if strings.Contains(line, "UpdateName") {
+							splitLine := strings.Split(string(line), " ")
+							var aux CityValue
+							aux.city = splitLine[2]
+							aux.value = splitLine[3]
+							NameModifiedCitiesArray = append(NameModifiedCitiesArray, aux)
+						}
+					}
+					//Se guarda todos los posibles conflictos problematicos, se resolverán después
+					if len(DeletedCitiesArray)>0 {
+						var aux DeletedCities
+						aux.planet = value.Planet
+						aux.cities = DeletedCitiesArray
+						ADC = append(ADC, aux)
+					}
+					if len(NameModifiedCitiesArray)>0 {
+						var aux NameModifiedCities
+						aux.planet = value.Planet
+						aux.cities = NameModifiedCitiesArray
+						ANMC = append(ANMC, aux)
+					}
+					flag2 := false
+					for _, value3 := range value.Data {
+						flag2 = false
+						for idx2, value4 := range value2.Data {
+							flag3 := false
+							for _, value5 := range NameModifiedCitiesArray{
+								if (value5.city == value3.City && value5.value == value4.City) || (value5.value == value3.City && value5.city == value4.City) {
+									flag3 = true //Una de las dos fue modificada
+								}
+							}
+							if value3.City == value4.City || flag3 { 
+								flag2 = true
+								i, err := strconv.Atoi(value3.Value)
+								if err != nil{
+									log.Fatal(err)
+								}
+								i2, err2 := strconv.Atoi(value4.Value)
+								if err2 != nil{
+									log.Fatal(err2)
+								}
+								if i > i2 {
+									//Si el valor del sv2 es mayor me quedo con él
+									Sv1Data[idx].Data[idx2].Value = value3.Value
+									//Sin importar posibles conflictos me quedo con el dato mayor para cada dato
+								} 
+								break
+							}
+						}
+						if !flag2 {
+							//Agregar el elemento
+							Sv1Data[idx].Data = append(Sv1Data[idx].Data, value3)
+						}
+					}
+					x := Max(value.X, value2.X)
+					y := Max(value.Y, value2.Y)
+					z := Max(value.Z, value2.Z)
+					Sv1Data[idx].X = x
+					Sv1Data[idx].Y = y
+					Sv1Data[idx].Z = z
+				} //Si son distintos se hace algo, si no es un dato que no se ha modificado
+			}
+		}
+		if !flag {
+			//Se agrega ya que no está
+			Sv1Data = append(Sv1Data, value)
+		}
+	}
+	for _, value := range Sv3Data {
+		flag = false
+		for idx, value2 := range Sv1Data {
+			if value.Planet == value2.Planet {
+				flag = true
+				if value.X != value2.X || value.Y != value2.Y || value.Z != value2.Z {
+					//Se debe revisar logs para posibles conflictos
+					lines := strings.Split(string(value.Logs), "\n")
+					lines2 := strings.Split(string(value2.Logs), "\n")
+					var DeletedCitiesArray []string 
+					var NameModifiedCitiesArray []CityValue 
+					for _, line := range lines {
+						if strings.Contains(line, "DeleteCity") {
+							splitLine := strings.Split(string(line), " ")
+							DeletedCitiesArray = append(DeletedCitiesArray, splitLine[2])
+						}else if strings.Contains(line, "UpdateName") {
+							splitLine := strings.Split(string(line), " ")
+							var aux CityValue
+							aux.city = splitLine[2]
+							aux.value = splitLine[3]
+							NameModifiedCitiesArray = append(NameModifiedCitiesArray, aux)
+						}
+					}
+					for _, line := range lines2 {
+						if strings.Contains(line, "DeleteCity") {
+							splitLine := strings.Split(string(line), " ")
+							DeletedCitiesArray = append(DeletedCitiesArray, splitLine[2])
+						}else if strings.Contains(line, "UpdateName") {
+							splitLine := strings.Split(string(line), " ")
+							var aux CityValue
+							aux.city = splitLine[2]
+							aux.value = splitLine[3]
+							NameModifiedCitiesArray = append(NameModifiedCitiesArray, aux)
+						}
+					}
+					//Se guarda todos los posibles conflictos problematicos, se resolverán después
+					if len(DeletedCitiesArray)>0 {
+						var aux DeletedCities
+						aux.planet = value.Planet
+						aux.cities = DeletedCitiesArray
+						ADC = append(ADC, aux)
+					}
+					if len(NameModifiedCitiesArray)>0 {
+						var aux NameModifiedCities
+						aux.planet = value.Planet
+						aux.cities = NameModifiedCitiesArray
+						ANMC = append(ANMC, aux)
+					}
+					flag2 := false
+					for _, value3 := range value.Data {
+						flag2 = false
+						for idx2, value4 := range value2.Data {
+							flag3 := false
+							for _, value5 := range NameModifiedCitiesArray{
+								if (value5.city == value3.City && value5.value == value4.City) || (value5.value == value3.City && value5.city == value4.City) {
+									flag3 = true //Una de las dos fue modificada
+								}
+							}
+							if value3.City == value4.City || flag3 { 
+								flag2 = true
+								i, err := strconv.Atoi(value3.Value)
+								if err != nil{
+									log.Fatal(err)
+								}
+								i2, err2 := strconv.Atoi(value4.Value)
+								if err2 != nil{
+									log.Fatal(err2)
+								}
+								if i > i2 {
+									//Si el valor del sv3 es mayor me quedo con él
+									Sv1Data[idx].Data[idx2].Value = value3.Value
+									//Sin importar posibles conflictos me quedo con el dato mayor para cada dato
+								} 
+								break
+							}
+						}
+						if !flag2 {
+							//Agregar el elemento
+							Sv1Data[idx].Data = append(Sv1Data[idx].Data, value3)
+						}
+					}
+					x := Max(value.X, value2.X)
+					y := Max(value.Y, value2.Y)
+					z := Max(value.Z, value2.Z)
+					Sv1Data[idx].X = x
+					Sv1Data[idx].Y = y
+					Sv1Data[idx].Z = z
+				} //Si son distintos se hace algo, si no es un dato que no se ha modificado
+			}
+		}
+		if !flag {
+			//Se agrega ya que no está
+			Sv1Data = append(Sv1Data, value)
+		}
+	}
+
+	//ServerData:= &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Logs: string(input2)}
+
+	/*
+	for idx,value := range Sv1Data {
+		for _,aux1 := range ADC{
+			if value.Planet == aux1.planet {
+				for _,dato := range value.Data{
+					
+				}
+			}
+		}
+		if flag { //se añade AAAaAaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAaa
+			
+		}
+	}*/
+	/*
+	for _,aux2 := range ANMC{
+				if value.Planet == aux2.planet {
+					for _,name := range aux2.city {
+						for i, city := range value.Data {
+							if name[0] == city.City {
+								//Se actualiza el nombre de la ciudad AAAAAAAAAAAAAAAaaaaAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+							}
+						}
+					}
+				}
+			}
+	*/
+	//Copiar lo de arriba + o -
+
+	//Resolver conflictos problematicos
+		/* SvXData -> [
+		{Planet: "", X: int32, Y: int32, Z: int32, Data: [
+			{City: "", Value: ""},
+			{City: "", Value: ""}
+			], Logs: "Mucho texto"}
+			]}
+			]
+			&pb.PlanetData{}
+			&pb.Data{}
+	*/
+	/* 2 arreglos -> {planeta, data} 
+	ADC -> arreglo que contiene ciudades eliminadas por planete, Sv1Data eliminando las ciudades 
+	[{planeta, ["nombres de ciudades","sdfsf"]}]
+	ANMC -> arreglo que contiene ciudades que se cambio el nombre por planeta, Sv1Data actualizando al nuevo nombre
+	[{planeta, [{"nombre anterior", "nuevo nombre"},{"nombre anterior2", "nuevo nombre2"}]}]
+	*/
+	EmptyAll() //Vacía todo
+	//Fill()
+	return
+}
+
 var PlanetsData []PlanetData
 
 func main() {
 	go func() {
-		Server2 := ":50058" // IP2
-		Server3 := ":50058" // IP3
+		Server2 := ":50058" //"10.6.40.228:50058" // IP2
+		Server3 := ":50058" //"10.6.40.229:50058" // IP3
 		conn, err := grpc.Dial(Server2, grpc.WithInsecure())
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)
@@ -317,18 +594,8 @@ func main() {
 		Server2Service := pb.NewChatServiceClient(conn)
 		Server3Service := pb.NewChatServiceClient(conn2)
 		for{
-			time.Sleep(120 * time.Second) //Se esperean dos minutos
-			
-			//message := pb.PropagationRequest{Planetsdata: []*pb.PlanetsData{
-			//	{Planet: "planeta1", X: 1, Y: 1, Z: 2, Data: []*pb.Data{{City: "ciudad1", Value: "1"},{City: "ciudad2", Value: "12"}}},
-			//	{Planet: "planeta2", X: 1, Y: 1, Z: 2, Data: []*pb.Data{{City: "ciudad1.1", Value: "2"},{City: "ciudad2.1", Value: "21"}}}}}
-			//Forma en la que funcionan los mensajes para pasar toda la información
-			// Posible recomendación para mi yo del futuro o pa cualquier otro miembro
-			// Ir armando de a poco, Buscar toda la data de un planeta y rellenar su "data" 
-			// con eso crear un tipo PlanetsData que se le vayan añadiendo más, cosa que al final quede:
-			//message := pb.PropagationRequest{Planetsdata: AllData}
-			// Si no es posible cambiar a enviar 1 por 1 y usar mensajes de Recibido, y terminado
-			message := pb.Propagation{Status: "Oe toca propagar"}
+			time.Sleep(120 * time.Second) //Se esperan dos minutos
+			message := pb.Propagation{Status: "Oe, ya pasaron 2 min toca propagar"}
 			response,err := Server2Service.PropagationRequest(context.Background(), &message)
 			for err != nil{
 				log.Fatalf("Error when calling PropagationRequest of server 2: %s",err)
@@ -339,12 +606,8 @@ func main() {
 				log.Fatalf("Error when calling PropagationRequest of server 3: %s",err)
 				response2,err = Server3Service.PropagationRequest(context.Background(), &message)
 			}
-			if response != nil && response2 != nil { //los dos response es toda la info
-				fmt.Println("A")
-			}
-			/*********************************FALTA AQUÍ EL MERGE Y GUARDAR NUEVA INFO *********/
-			//Merge(response, response2) -> reemplazar la info interna también y borrar logs
-			EmptyLogs() //Vacía los logs
+
+			Merge(response.Planetsdata, response2.Planetsdata) //Realiza el merge y guarda la data en los archivos y la estructura
 			message2 := InfoToMessage() //Pasa la información guardada a mensaje
 			response3,err := Server2Service.EventualConsistency(context.Background(), message2)
 			for err != nil && response3.Status != "OK"{

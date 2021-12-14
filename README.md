@@ -1,14 +1,37 @@
 # SDLab3
 
--INGRESAR COMENTARIOS DE QUE SE DEBE INGRESAR EN QUE MÁQUINA
+### Integrantes
 
-Comandos para no olvidar del makefile:
+- Cristian Jara 201704563-9
 
-runBroker
-runLeia
+- Sebastian Muoz 201473503-0
+
+- María Riveros 201704585-k
+
+### Instrucciones para funcionamiento
+
+Primero se debe conectar el Broker en la máquina virtual dist86 con ip 10.6.40.227 con el comando "make runBroker", luego se deben conectar todos los servidores en el orden 3,2,1 o 2,3,1 asegurando de dejar al servidor 1 (principal) para el final ya que este se conectará a los otros dos para la consistencia eventual. A continuación se detallará el paso por paso:
+
+1. Conectar el Broker en la máquina virtual dist86 con ip 10.6.40.227 con "make runBroker", en este caso el broker queda solo para cumplir con las restricciones.
+
+2. Para la máquina dist87 con ip 10.6.40.228 conectar el servidor 2 con el comando "make runSv2", en esta misma máquina se debe correr el informante 1 con el comando "make runInf1", de todas formas se recomienda dejar los "clientes" para el final.
+
+3. Para la máquina dist88 con ip 10.6.40.229 conectar el servidor 3 con el comando "make runSv3", de igual manera que antes aquí se conecta el informante 2 con el comando "make runInf2".
+
+4. Para la máquina dist85 con ip 10.6.40.225 se debe conectar el servidor 1 que realiza la función de principal con el comando "make runSv1", en esta misma máquina se conecta a Leia con el comando "make runLeia".
+
+5. Cómo fue mencionado idealmente una vez conectado broker y servidores, deberían conectarse recién los clientes para no generar posibles problemas (como consultar antes de que estos esten conectados).
+
+### Comandos del makefile:
+
+runBroker : Corre el proceso del Broker
+runLeia : Corre el proceso de Leia
 runInf1 : Corre al informante 1 que corresponde a Ahsoka Tano
 runInf2 : Corre al informante 2 que corresponde al almirante Thrawn
 runSv1 : Corre el servidor Fulcrum 1 que será el principal
 runSv2 : Corre el servidor Fulcrum 2 
 runSv3 : Corre el servidor Fulcrum 3 
 
+### Explicación del MERGE y resolución de problemas
+
+ANOTAR CUANDO SEA IMPLEMENTADO

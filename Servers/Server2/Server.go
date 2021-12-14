@@ -261,16 +261,67 @@ func (s *server) PropagationRequest(ctx context.Context, in *pb.Propagation)(*pb
 
 func (s *server) EventualConsistency(ctx context.Context, in *pb.PropagationReply)(*pb.Propagation,error){
 	// Vaciar los logs de cada planeta
-	EmptyLogs()
+	/********************FALTA AQUÍ ******************************/
+	//
+	// Aquí llega toda la data en in
+	// in.Status: Estado
+	// in.Planetsdata -> arreglo de toda la info
+	// in.Planetsdata[i] que contiene los siguientes atributos
+	/*
+	message PlanetsData{
+    string planet = 1;
+    int32 X = 2;
+    int32 Y = 3;
+    int32 Z = 4;
+    repeated Data data = 5; -> Contiene un arreglo con todas las ciudades con su respectivo valor
+    string logs = 6; -> debería llegar vacío
+	}
+	message Data{
+    string city = 1;
+    string value = 2;
+	}
+	in.Planetsdata[i].Data[j].value -> para un valor en especifico
+	// Revisar si la data tiene archivos nuevos que crear
+
+	Opciones: Borrar todo lo qque tiene y reescribir (archivos como el struct que se tiene)
+	PlanetsData -> struct con los datos de cada planeta (reloj y el nombre)
+	archivo de cada uno 
+	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt" <- archivo
+	output = formatear(input)
+	err = ioutil.WriteFile(path, []byte(output), 0644)
+	*/
 	// Cambiar todos los datos por lo nuevo
+
+	EmptyAll()
+	for _, p := range in.Planetsdata{
+		// por cada registro planetario elimina version anterior y crea nueva
+		var path = "Servers/ServersData/PlanetRegisters/"+ p.Planet +".txt"
+
+		//crear registro nuevo
+		crearRegistro(path,p.Planet)
+
+		// llenar el registro con la info recibida
+		//for e, c := range p.Data{
+			
+		//}
+
+
+	}
+
+
 	return &pb.Propagation{Status: "OK"}, nil
 }
 
-func EmptyLogs(){
+func EmptyAll(){
 	for _, value := range PlanetsData{
 		path := "Servers/ServersData/Logs/"+ value.planet +".txt"
 		err := ioutil.WriteFile(path, []byte(""), 0644)
 		if err != nil {
+			log.Fatal(err)
+		}
+		path2 := "Servers/ServersData/PlanetRegisters/"+ value.planet +".txt"
+		err2 := ioutil.WriteFile(path2, []byte(""), 0644)
+		if err2 != nil {
 			log.Fatal(err)
 		}
 	}
@@ -304,30 +355,9 @@ func InfoToMessage() (*pb.PropagationReply){
 	return message
 }
 
-var PlanetsData []PlanetData
+var PlanetsData []PlanetData //Arreglo que contiene los relojes de cada planeta
 
 func main() {
-	/*go func() {
-		ChoosenServer := ":50058"
-		conn, err := grpc.Dial(ChoosenServer, grpc.WithInsecure())
-		if err != nil {
-			log.Fatalf("could not greet: %v", err)
-		}
-		ServerService := pb.NewChatServiceClient(conn)
-		for{
-			time.Sleep(120 * time.Second)
-			message := pb.PropagationRequest{Planetsdata: []*pb.PlanetsData{
-				{Planet: "planeta1", X: 1, Y: 1, Z: 2, Data: []*pb.Data{{City: "ciudad1", Value: "1"},{City: "ciudad2", Value: "12"}}},
-				{Planet: "planeta2", X: 1, Y: 1, Z: 2, Data: []*pb.Data{{City: "ciudad1.1", Value: "2"},{City: "ciudad2.1", Value: "21"}}}}}
-			//Forma en la que funcionan los mensajes para pasar toda la información
-			// Posible recomendación para mi yo del futuro o pa cualquier otro miembro
-			// Ir armando de a poco, Buscar toda la data de un planeta y rellenar su "data" 
-			// con eso crear un tipo PlanetsData que se le vayan añadiendo más, cosa que al final quede:
-			//message := pb.PropagationRequest{Planetsdata: AllData}
-			// Si no es posible cambiar a enviar 1 por 1 y usar mensajes de Recibido, y terminado
-			ServerService.EventualConsistency(context.Background(), &message)
-		}
-	}()*/
 	var path = "Servers/ServersData"
 	var _, err = os.Stat(path)
 	if !os.IsNotExist(err){
