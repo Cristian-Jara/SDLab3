@@ -130,7 +130,10 @@ func (s *server) AddCity(ctx context.Context, in *pb.ServerRequest) (*pb.ServerR
 func (s *server) UpdateName(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
 	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
 	var path2 = "Servers/ServersData/Logs/"+ in.Planet +".txt" 
-	//Se asume que en este punto existen
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return &pb.ServerReply{ Status: "El planeta indicado no existe en el servidor 1 aún"},err
+	}
 	input, err := ioutil.ReadFile(path)
 	if err != nil{
 		log.Fatal(err)
@@ -161,7 +164,10 @@ func (s *server) UpdateName(ctx context.Context, in *pb.ServerRequest) (*pb.Serv
 func (s *server) UpdateNumber(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
 	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
 	var path2 = "Servers/ServersData/Logs/"+ in.Planet +".txt" 
-	//Se asume que en este punto existen
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return &pb.ServerReply{ Status: "El planeta indicado no existe en el servidor 1 aún"},err
+	}
 	input, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatalln(err)
@@ -193,7 +199,10 @@ func (s *server) UpdateNumber(ctx context.Context, in *pb.ServerRequest) (*pb.Se
 func (s *server) DeleteCity(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
 	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt"
 	var path2 = "Servers/ServersData/Logs/"+ in.Planet +".txt" 
-	//Se asume que en este punto existen
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return &pb.ServerReply{ Status: "El planeta indicado no existe en el servidor 1 aún"},err
+	}
 	input, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatalln(err)
@@ -219,7 +228,6 @@ func (s *server) DeleteCity(ctx context.Context, in *pb.ServerRequest) (*pb.Serv
 	if err2 != nil {
 		return &pb.ServerReply{ Status: "Error al escribir en el archivo log" },err2
 	}
-
 	return &pb.ServerReply{ Status: "OK", X: x, Y: y, Z: z },nil
 }
 
@@ -232,7 +240,7 @@ func (s *server) GetNumberRebelds(ctx context.Context, in *pb.LeiaRequest)(*pb.L
 		}
 	} // Buscar si existe
 	if x == int32(-1){
-		return &pb.LeiaReply{Status: "No se encontró el planeta y ciudad dados"}, nil
+		return &pb.LeiaReply{Status: "No se encontró el planeta dado"}, nil
 	}
 	input, err := ioutil.ReadFile(path)
 	if err != nil{
@@ -240,7 +248,7 @@ func (s *server) GetNumberRebelds(ctx context.Context, in *pb.LeiaRequest)(*pb.L
 		return &pb.LeiaReply{Status: "Error al leer el archivo"}, nil
 	}
 	lines := strings.Split(string(input), "\n")
-	var quantity int32
+	var quantity int32 = 0
 	for _, line := range lines {
 		if strings.Contains(line, in.City) {
 			splitLine := strings.Split(string(line), " ")
@@ -250,9 +258,10 @@ func (s *server) GetNumberRebelds(ctx context.Context, in *pb.LeiaRequest)(*pb.L
 				return &pb.LeiaReply{Status: "Error obtener valor númerico de rebeldes"}, nil
 			}
 			quantity = int32(i) //Se saca el número  
+			return &pb.LeiaReply{Status:"OK", Quantity: quantity, X: x, Y: y, Z: z},nil
 		}
 	}
-	return &pb.LeiaReply{Status:"OK", Quantity: quantity, X: x, Y: y, Z: z},nil
+	return &pb.LeiaReply{Status:"No se encontró el planeta y ciudad indicados", Quantity: quantity, X: x, Y: y, Z: z},nil
 }
 
 /*func propagacion(){
