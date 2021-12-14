@@ -34,4 +34,7 @@ runSv3 : Corre el servidor Fulcrum 3
 
 ### Explicación del MERGE y resolución de problemas
 
-ANOTAR CUANDO SEA IMPLEMENTADO
+Para el merge se realiza por partes tomando la data del servidor 1 (principal) como la inicial desde ahí se va agregando toda la información faltante y actualizando con el mayor número que exista en una ciudad de cierto planeta con la información de los otros servidores. 
+
+
+De los posibles conflictos, los de AddCity y UpdateNumber fueron ignorados y simplemente se toma el mayor valor de cierta ciudad, para los otros dos eran algo más complejos así que se crearon listas con todos estos conflictos y al final de actualizar la info se arreglaban. Para el updateName se revisaron todos los que tenían el problema y se queda con el último valor actualizado, por otro lado en DeleteCity se asumió que si una ciudad era eliminada en cualquiera de los servidores, sin importar si se actualizaba después u otra cosa se eliminaba.
