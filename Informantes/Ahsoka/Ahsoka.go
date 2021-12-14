@@ -36,7 +36,7 @@ var (
 )
 
 func main(){
-	conn,err := grpc.Dial(fmt.Sprint(LocalIP,Puerto), grpc.WithInsecure())
+	conn,err := grpc.Dial(fmt.Sprint(BrokerIP,Puerto), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("could not connect: %s",err)
 	}
@@ -54,6 +54,7 @@ func main(){
 		x:= int32(-1)
 		y:= int32(-1)
 		z:= int32(-1)
+		lastserver := ""
 		Exist = false
 		// Revisar si la planeta y ciudad existe y enviar el reloj si es así
 		for idx,_ := range PlanetsList{
@@ -61,6 +62,7 @@ func main(){
 				x = PlanetsList[idx].X
 				y = PlanetsList[idx].Y
 				z = PlanetsList[idx].Z
+				lastserver = PlanetsList[idx].lastserver
 				Exist = true
 			}
 		}
@@ -95,18 +97,6 @@ func main(){
 			message2 := pb.ServerRequest{Planet: planet, City: city, Value: value,X: x, Y:y, Z: z}
 			response2, err := ServerClient.AddCity(context.Background(), &message2)
 			if response2.Status == "OK"{
-				/*for idx,_ := range PlanetsList{
-					if planet == PlanetsList[idx].planet && city == PlanetsList[idx].city {
-						Exist = true
-						if PlanetsList[idx].X <= response2.X && PlanetsList[idx].Y <= response2.Y && PlanetsList[idx].Z <= response2.Z {
-							PlanetsList[idx].X = response2.X
-							PlanetsList[idx].Y = response2.Y
-							PlanetsList[idx].Z = response2.Z
-							PlanetsList[idx].lastserver = response.IP
-						} 
-						break
-					} 
-				}*/
 				PlanetsList = append(PlanetsList, PlanetInfo{planet, city, response2.X,response2.Y,response2.Z, response.IP})
 			}else {
 				log.Printf("No se pudo realizar la acción ingresada " + response2.Status)
@@ -114,7 +104,7 @@ func main(){
 		}else if input == "2"{
 			log.Printf("Ingresa el nuevo nombre de la ciudad:")
 			fmt.Scanln(&value)
-			message := pb.BrokerRequest{X: x,Y: y,Z: z} 
+			message := pb.BrokerRequest{X: x,Y: y,Z: z, Lastserver: lastserver} 
 			//Si se envia -1,-1,-1 quiere decir que aún no se tienen datos de él
 			response,err := serviceClient.GetServer(context.Background(), &message)
 			if err != nil{
@@ -155,7 +145,7 @@ func main(){
 				fmt.Scanln(&value)
 				_, err = strconv.Atoi(value);
 			}
-			message := pb.BrokerRequest{X: x,Y: y,Z: z} 
+			message := pb.BrokerRequest{X: x,Y: y,Z: z, Lastserver: lastserver} 
 			//Si se envia -1,-1,-1 quiere decir que aún no se tienen datos de él
 			response,err := serviceClient.GetServer(context.Background(), &message)
 			if err != nil{
@@ -188,7 +178,7 @@ func main(){
 				log.Printf("No se pudo realizar la acción ingresada " + response2.Status)
 			}
 		}else if input == "4"{
-			message := pb.BrokerRequest{X: x,Y: y,Z: z} 
+			message := pb.BrokerRequest{X: x,Y: y,Z: z, Lastserver: lastserver} 
 			//Si se envia -1,-1,-1 quiere decir que aún no se tienen datos de él
 			response,err := serviceClient.GetServer(context.Background(), &message)
 			if err != nil{

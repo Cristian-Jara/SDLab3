@@ -259,56 +259,36 @@ func (s *server) PropagationRequest(ctx context.Context, in *pb.Propagation)(*pb
 	return message, nil
 }
 
-func (s *server) EventualConsistency(ctx context.Context, in *pb.PropagationReply)(*pb.Propagation,error){
-	// Vaciar los logs de cada planeta
-	/********************FALTA AQUÍ ******************************/
-	//
-	// Aquí llega toda la data en in
-	// in.Status: Estado
-	// in.Planetsdata -> arreglo de toda la info
-	// in.Planetsdata[i] que contiene los siguientes atributos
-	/*
-	message PlanetsData{
-    string planet = 1;
-    int32 X = 2;
-    int32 Y = 3;
-    int32 Z = 4;
-    repeated Data data = 5; -> Contiene un arreglo con todas las ciudades con su respectivo valor
-    string logs = 6; -> debería llegar vacío
-	}
-	message Data{
-    string city = 1;
-    string value = 2;
-	}
-	in.Planetsdata[i].Data[j].value -> para un valor en especifico
-	// Revisar si la data tiene archivos nuevos que crear
-
-	Opciones: Borrar todo lo qque tiene y reescribir (archivos como el struct que se tiene)
-	PlanetsData -> struct con los datos de cada planeta (reloj y el nombre)
-	archivo de cada uno 
-	var path = "Servers/ServersData/PlanetRegisters/"+ in.Planet +".txt" <- archivo
-	output = formatear(input)
-	err = ioutil.WriteFile(path, []byte(output), 0644)
-	*/
-	// Cambiar todos los datos por lo nuevo
-
-	EmptyAll()
-	for _, p := range in.Planetsdata{
-		// por cada registro planetario elimina version anterior y crea nueva
+func Fill(data []*pb.PlanetsData){
+	for _, p := range data{
+		// por cada registro planetario crea version nueva
 		var path = "Servers/ServersData/PlanetRegisters/"+ p.Planet +".txt"
-
+		var path2 = "Servers/ServersData/Logs/"+ p.Planet +".txt" 
 		//crear registro nuevo
-		crearRegistro(path,p.Planet)
-
-		// llenar el registro con la info recibida
-		//for e, c := range p.Data{
-			
-		//}
-
-
+		crearRegistro(path,p.Planet) // Crea el archivo y añade Planetdata correspondiente
+		crearLog(path2) //Crea el archivo log si no existe
+		// se actualiza arreglo de planetas
+		// revisa en que posición está y lo atualiza
+		for idx, value := range PlanetsData {
+			if p.Planet == value.planet {
+				PlanetsData[idx].X = p.X
+				PlanetsData[idx].Y = p.Y
+				PlanetsData[idx].Z = p.Z
+			}
+		}
+		// se escriben los datos de ciudades
+		for _, c := range p.Data{
+			text := p.Planet +  c.City + c.Value + "\n"
+			escribirArchivo(path,text)
+		}
 	}
+	return
+}
 
 
+func (s *server) EventualConsistency(ctx context.Context, in *pb.PropagationReply)(*pb.Propagation,error){
+	EmptyAll()
+	Fill(in.Planetsdata)
 	return &pb.Propagation{Status: "OK"}, nil
 }
 

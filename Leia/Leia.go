@@ -36,7 +36,7 @@ var (
 )
 
 func main(){
-	conn,err := grpc.Dial(fmt.Sprint(LocalIP,Puerto), grpc.WithInsecure())
+	conn,err := grpc.Dial(fmt.Sprint(BrokerIP,Puerto), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("could not connect: %s",err)
 	}

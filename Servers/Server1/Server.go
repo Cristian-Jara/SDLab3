@@ -328,6 +328,33 @@ func Max(x,y int32) (int32){
 	return x
 }
 
+func Fill(data []*pb.PlanetsData){
+	for _, p := range data{
+		// por cada registro planetario crea version nueva
+		var path = "Servers/ServersData/PlanetRegisters/"+ p.Planet +".txt"
+		var path2 = "Servers/ServersData/Logs/"+ p.Planet +".txt" 
+		//crear registro nuevo
+		crearRegistro(path,p.Planet) // Crea el archivo y añade Planetdata correspondiente
+		crearLog(path2) //Crea el archivo log si no existe
+		// se actualiza arreglo de planetas
+		// revisa en que posición está y lo atualiza
+		for idx, value := range PlanetsData {
+			if p.Planet == value.planet {
+				PlanetsData[idx].X = p.X
+				PlanetsData[idx].Y = p.Y
+				PlanetsData[idx].Z = p.Z
+			}
+		}
+		// se escriben los datos de ciudades
+		for _, c := range p.Data{
+			text := p.Planet +  c.City + c.Value + "\n"
+			escribirArchivo(path,text)
+		}
+	}
+	return
+}
+
+
 func Merge(Sv2Data, Sv3Data []*pb.PlanetsData){
 	Sv1Data := InfoToMessage().Planetsdata // Formatea la info para que este con el mismo formato que el los demás servidores
 	//Asumir Sv1Data está bien y desde las acciones de los demás aplicar modificaciones
@@ -524,56 +551,61 @@ func Merge(Sv2Data, Sv3Data []*pb.PlanetsData){
 			Sv1Data = append(Sv1Data, value)
 		}
 	}
-
-	//ServerData:= &pb.PlanetsData{Planet: value.planet, X: value.X, Y: value.Y, Z: value.Z, Logs: string(input2)}
-
-	/*
+	
 	for idx,value := range Sv1Data {
+		// <- aqui definir el data por añadir de cada planeta
 		for _,aux1 := range ADC{
 			if value.Planet == aux1.planet {
-				for _,dato := range value.Data{
-					
-				}
-			}
-		}
-		if flag { //se añade AAAaAaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAaa
-			
-		}
-	}*/
-	/*
-	for _,aux2 := range ANMC{
-				if value.Planet == aux2.planet {
-					for _,name := range aux2.city {
-						for i, city := range value.Data {
-							if name[0] == city.City {
-								//Se actualiza el nombre de la ciudad AAAAAAAAAAAAAAAaaaaAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+				for idx2,dato := range value.Data{
+					flag = true
+					for _,city := range aux1.cities{
+						if dato.City == city {
+							flag = false
+							Sv1Data[idx].Data = append(Sv1Data[idx].Data[:idx2], Sv1Data[idx].Data[idx2+1:]...)
+							//ciudad encontrada para eliminar
+							// Sv1Data[idx].Data[idx2] <- se debe eliminar o NO añadir
+						}
+					}
+					if flag { //Vamo a buscarlo
+						ciudad := ""
+						for _,aux2 := range ANMC {
+							if value.Planet == aux2.planet{
+								for _,place := range aux2.cities{
+									if place.city == dato.City { //busca posible nombre por actualizar de ciudad por eliminar 
+										ciudad = place.value
+										break
+									} else if place.value == dato.City { //busca posible nombre viejo por eliminar
+										ciudad = place.city
+										break
+									}
+								}
+							}
+						}
+						for _,city := range aux1.cities{
+							if city == ciudad {
+								Sv1Data[idx].Data = append(Sv1Data[idx].Data[:idx2], Sv1Data[idx].Data[idx2+1:]...)
+								//ciudad encontrada para eliminar
+								// Sv1Data[idx].Data[idx2] <- se debe eliminar, o NO añadir
 							}
 						}
 					}
 				}
+			}			
+		}
+		for _,aux2 := range ANMC{ 
+			if value.Planet == aux2.planet {
+				for _,name := range aux2.cities{ //Recorre par (nombre viejo,nombre actual)
+					for idx3,place := range value.Data { //Busca coincidencias para actualizar
+						if name.city == place.City{
+							Sv1Data[idx].Data[idx3].Value=name.value // <- hay que actualizar el nombre de la ciudad
+						}
+					}
+				}
 			}
-	*/
-	//Copiar lo de arriba + o -
-
-	//Resolver conflictos problematicos
-		/* SvXData -> [
-		{Planet: "", X: int32, Y: int32, Z: int32, Data: [
-			{City: "", Value: ""},
-			{City: "", Value: ""}
-			], Logs: "Mucho texto"}
-			]}
-			]
-			&pb.PlanetData{}
-			&pb.Data{}
-	*/
-	/* 2 arreglos -> {planeta, data} 
-	ADC -> arreglo que contiene ciudades eliminadas por planete, Sv1Data eliminando las ciudades 
-	[{planeta, ["nombres de ciudades","sdfsf"]}]
-	ANMC -> arreglo que contiene ciudades que se cambio el nombre por planeta, Sv1Data actualizando al nuevo nombre
-	[{planeta, [{"nombre anterior", "nuevo nombre"},{"nombre anterior2", "nuevo nombre2"}]}]
-	*/
+		}
+	}
 	EmptyAll() //Vacía todo
-	//Fill()
+	Fill(Sv1Data) //<----- copy paste de lo que hace el nacho en sv2    // ecole cuá 
 	return
 }
 
@@ -581,8 +613,8 @@ var PlanetsData []PlanetData
 
 func main() {
 	go func() {
-		Server2 := ":50058" //"10.6.40.228:50058" // IP2
-		Server3 := ":50058" //"10.6.40.229:50058" // IP3
+		Server2 := "10.6.40.228:50058" // IP2
+		Server3 := "10.6.40.229:50058" // IP3
 		conn, err := grpc.Dial(Server2, grpc.WithInsecure())
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)

@@ -41,6 +41,7 @@ message BrokerRequest{
     int32 X = 1;
     int32 Y = 2;
     int32 Z = 3;
+    string lastserver = 4;
 }
 
 message BrokerReply{

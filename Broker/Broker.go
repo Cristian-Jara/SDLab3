@@ -16,20 +16,20 @@ type Server struct {
 func ChooseServer(X, Y, Z int)(string){ //Función que elige un servidor
 	var ChoosenServer string
 	rand.Seed(time.Now().UnixNano())
-	if int(X) > int(Y) && int(X) > int(Z) { //[1,0,0] el último en editarse fue el primero
-		ChoosenServer = ":50058"//"10.6.40.225:50058" // IP1
-	} else if int(Y) > int(X) && int(Y) > int(Z) { //[0,1,0] el último en editarse el segundo
-		ChoosenServer = ":50058"//"10.6.40.228:50058" // IP2	
-	} else if int(Z) > int(Y) && int(Z) > int(X) { //[0,0,1] el último en editarse el tercero
-		ChoosenServer = ":50058"//"10.6.40.229:50058" // IP3
+	if int(X) > int(Y) && int(X) > int(Z) {
+		ChoosenServer = "10.6.40.225:50058" // IP1
+	} else if int(Y) > int(X) && int(Y) > int(Z) { 
+		ChoosenServer = "10.6.40.228:50058" // IP2	
+	} else if int(Z) > int(Y) && int(Z) > int(X) { 
+		ChoosenServer = "10.6.40.229:50058" // IP3
 	} else { // [1,1,1] no se sabe cual fue el último o no se ha editado, se elige al azar
 		id := rand.Intn(3)
 		if id == 0 {
-			ChoosenServer = ":50058"//"10.6.40.225:50058" // IP1
+			ChoosenServer = "10.6.40.225:50058" // IP1
 		} else if id == 1 {
-			ChoosenServer = ":50058"//"10.6.40.228:50058" // IP2
+			ChoosenServer = "10.6.40.228:50058" // IP2
 		} else {
-			ChoosenServer = ":50058"//"10.6.40.229:50058" // IP3
+			ChoosenServer = "10.6.40.229:50058" // IP3
 		}
 	}
 	return ChoosenServer
@@ -52,6 +52,9 @@ func (s *Server) GetNumberRebelds(ctx context.Context, message *pb.LeiaRequest) 
 
 func (s *Server) GetServer(ctx context.Context, message *pb.BrokerRequest) (*pb.BrokerReply,error) {
 	log.Printf("Un informante se ha conectado ... \nEntregando dirección de uno de los servidores Fulcrum ...\nDirección enviada")
+	if message.Lastserver != "" {
+		return &pb.BrokerReply{IP: message.Lastserver}, nil
+	}
 	return &pb.BrokerReply{IP: ChooseServer(int(message.X),int(message.Y),int(message.Z))}, nil
 }
 const (
